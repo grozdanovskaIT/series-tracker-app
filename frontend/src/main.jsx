@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Plus, RefreshCw, Trash2, Tv } from 'lucide-react';
 import './styles.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 const emptyForm = {
   title: '',
   genre: '',
