@@ -1,18 +1,13 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: series-tracker-postgres
-    environment:
-      POSTGRES_DB: series_tracker
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+  mongo:
+    image: mongo:7
+    container_name: series-tracker-mongo
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - mongo_data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d series_tracker"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -23,15 +18,11 @@ services:
     container_name: series-tracker-backend
     environment:
       PORT: 4000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: series_tracker
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      MONGO_URI: mongodb://mongo:27017/series_tracker
     ports:
       - "4000:4000"
     depends_on:
-      postgres:
+      mongo:
         condition: service_healthy
 
   frontend:
@@ -46,4 +37,4 @@ services:
       - backend
 
 volumes:
-  postgres_data:
+  mongo_data:

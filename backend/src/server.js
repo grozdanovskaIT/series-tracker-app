@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
-import { pool } from './db.js';
+import { connectDatabase, isDatabaseConnected } from './db.js';
+import { Series } from './models/Series.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -11,20 +12,17 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', async (_req, res) => {
-  try {
-    await pool.query('SELECT 1');
-    res.json({ status: 'ok', database: 'connected' });
-  } catch (error) {
-    res.status(503).json({ status: 'error', database: 'unavailable' });
-  }
+  const connected = isDatabaseConnected();
+  res.status(connected ? 200 : 503).json({
+    status: connected ? 'ok' : 'error',
+    mongodb: connected ? 'connected' : 'disconnected'
+  });
 });
 
 app.get('/api/series', async (_req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, title, genre, status, rating, notes, created_at FROM series ORDER BY created_at DESC'
-    );
-    res.json(result.rows);
+    const series = await Series.find().sort({ createdAt: -1 });
+    res.json(series);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch series' });
   }
@@ -46,14 +44,15 @@ app.post('/api/series', async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      `INSERT INTO series (title, genre, status, rating, notes)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, title, genre, status, rating, notes, created_at`,
-      [title.trim(), genre.trim(), normalizedStatus, numericRating, notes?.trim() || null]
-    );
+    const series = await Series.create({
+      title,
+      genre,
+      status: normalizedStatus,
+      rating: numericRating,
+      notes: notes || null
+    });
 
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(series);
   } catch (error) {
     res.status(500).json({ error: 'Failed to add series' });
   }
@@ -63,9 +62,9 @@ app.delete('/api/series/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query('DELETE FROM series WHERE id = $1 RETURNING id', [id]);
+    const series = await Series.findByIdAndDelete(id);
 
-    if (result.rowCount === 0) {
+    if (!series) {
       return res.status(404).json({ error: 'Series not found' });
     }
 
@@ -75,7 +74,13 @@ app.delete('/api/series/:id', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Series Tracker API listening on port ${port}`);
-});
-
+connectDatabase()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Series Tracker API listening on port ${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to connect to MongoDB', error);
+    process.exit(1);
+  });

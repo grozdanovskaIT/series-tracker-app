@@ -1,12 +1,11 @@
-import pg from 'pg';
+import mongoose from 'mongoose';
 
-const { Pool } = pg;
+const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/series_tracker';
 
-export const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT || 5432),
-  database: process.env.DB_NAME || 'series_tracker',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres'
-});
+export async function connectDatabase() {
+  await mongoose.connect(mongoUri);
+}
 
+export function isDatabaseConnected() {
+  return mongoose.connection.readyState === 1;
+}
