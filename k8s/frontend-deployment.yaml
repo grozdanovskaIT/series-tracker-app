@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: frontend
   namespace: series-tracker
+  labels:
+    app: frontend
+    app.kubernetes.io/name: series-tracker
+    app.kubernetes.io/component: frontend
 spec:
   replicas: 1
   selector:
@@ -12,9 +16,13 @@ spec:
     metadata:
       labels:
         app: frontend
+        app.kubernetes.io/name: series-tracker
+        app.kubernetes.io/component: frontend
     spec:
       containers:
         - name: frontend
           image: sara583/series-tracker-frontend:latest
+          imagePullPolicy: Always
           ports:
-            - containerPort: 5173
+            - name: http
+              containerPort: 5173

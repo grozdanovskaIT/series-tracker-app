@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: backend
   namespace: series-tracker
+  labels:
+    app: backend
+    app.kubernetes.io/name: series-tracker
+    app.kubernetes.io/component: backend
 spec:
   replicas: 1
   selector:
@@ -12,15 +16,20 @@ spec:
     metadata:
       labels:
         app: backend
+        app.kubernetes.io/name: series-tracker
+        app.kubernetes.io/component: backend
     spec:
       containers:
         - name: backend
           image: sara583/series-tracker-backend:latest
+          imagePullPolicy: Always
           ports:
-            - containerPort: 4000
+            - name: http
+              containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: backend-config
           env:
-            - name: PORT
-              value: "4000"
             - name: MONGO_URI
               valueFrom:
                 secretKeyRef:

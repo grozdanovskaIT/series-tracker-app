@@ -3,7 +3,10 @@ kind: Ingress
 metadata:
   name: series-tracker-ingress
   namespace: series-tracker
+  labels:
+    app.kubernetes.io/name: series-tracker
 spec:
+  ingressClassName: traefik
   rules:
     - http:
         paths:

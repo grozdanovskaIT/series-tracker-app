@@ -3,6 +3,10 @@ kind: StatefulSet
 metadata:
   name: mongo
   namespace: series-tracker
+  labels:
+    app: mongo
+    app.kubernetes.io/name: series-tracker
+    app.kubernetes.io/component: mongo
 spec:
   serviceName: mongo
   replicas: 1
@@ -13,12 +17,22 @@ spec:
     metadata:
       labels:
         app: mongo
+        app.kubernetes.io/name: series-tracker
+        app.kubernetes.io/component: mongo
     spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
       containers:
         - name: mongo
           image: mongo:7
+          imagePullPolicy: Always
+          command:
+            - mongod
+          args:
+            - --bind_ip_all
           ports:
-            - containerPort: 27017
+            - name: mongo
+              containerPort: 27017
           volumeMounts:
             - name: mongo-data
               mountPath: /data/db
