@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Plus, RefreshCw, Trash2, Tv } from 'lucide-react';
+import { Clapperboard, Plus, RefreshCw, Star, Trash2, Tv } from 'lucide-react';
 import './styles.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -11,6 +11,44 @@ const emptyForm = {
   rating: '',
   notes: ''
 };
+
+const statusLabels = {
+  planned: 'Planned',
+  watching: 'Watching',
+  completed: 'Completed'
+};
+
+function getRatingTone(rating) {
+  if (rating === null || rating === undefined) return 'unrated';
+  if (rating < 5) return 'low';
+  if (rating < 8) return 'medium';
+  return 'high';
+}
+
+function RatingStars({ rating }) {
+  if (rating === null || rating === undefined) {
+    return <span className="rating-value unrated">Unrated</span>;
+  }
+
+  const filledStars = Math.round(Number(rating) / 2);
+  const tone = getRatingTone(Number(rating));
+
+  return (
+    <span className={`rating-display ${tone}`} aria-label={`Rating ${rating} out of 10`}>
+      <span className="stars" aria-hidden="true">
+        {Array.from({ length: 5 }, (_, index) => (
+          <Star
+            key={index}
+            size={16}
+            className={index < filledStars ? 'star filled' : 'star empty'}
+            fill="currentColor"
+          />
+        ))}
+      </span>
+      <span className="rating-value">{rating}/10</span>
+    </span>
+  );
+}
 
 function App() {
   const [series, setSeries] = useState([]);
@@ -96,7 +134,7 @@ function App() {
     <main className="app-shell">
       <section className="hero">
         <div>
-          <p className="eyebrow">Personal watchlist</p>
+          <p className="eyebrow"><Clapperboard size={16} aria-hidden="true" /> Personal watchlist</p>
           <h1>Series Tracker</h1>
           <p className="intro">
             Keep every planned, active, and completed series in one tidy place.
@@ -111,14 +149,17 @@ function App() {
 
       <section className="workspace">
         <form className="series-form" onSubmit={addSeries}>
-          <h2>Add series</h2>
+          <div className="section-heading">
+            <p className="section-kicker">New entry</p>
+            <h2>Add series</h2>
+          </div>
           <label>
             Title
-            <input name="title" value={form.title} onChange={updateForm} required />
+            <input name="title" value={form.title} onChange={updateForm} placeholder="The Bear" required />
           </label>
           <label>
             Genre
-            <input name="genre" value={form.genre} onChange={updateForm} required />
+            <input name="genre" value={form.genre} onChange={updateForm} placeholder="Drama, comedy" required />
           </label>
           <div className="form-row">
             <label>
@@ -139,12 +180,19 @@ function App() {
                 step="0.1"
                 value={form.rating}
                 onChange={updateForm}
+                placeholder="8.5"
               />
             </label>
           </div>
           <label>
             Notes
-            <textarea name="notes" value={form.notes} onChange={updateForm} rows="4" />
+            <textarea
+              name="notes"
+              value={form.notes}
+              onChange={updateForm}
+              rows="4"
+              placeholder="Where you left off, who recommended it, or why it is on the list"
+            />
           </label>
           <button className="primary-button" type="submit" disabled={saving}>
             <Plus size={18} aria-hidden="true" />
@@ -154,7 +202,10 @@ function App() {
 
         <section className="series-panel">
           <div className="panel-heading">
-            <h2>All series</h2>
+            <div className="section-heading">
+              <p className="section-kicker">Library</p>
+              <h2>All series</h2>
+            </div>
             <button className="icon-button" type="button" onClick={loadSeries} aria-label="Refresh series">
               <RefreshCw size={18} aria-hidden="true" />
             </button>
@@ -163,22 +214,28 @@ function App() {
           {error && <p className="error-message">{error}</p>}
           {loading && <p className="empty-state">Loading series...</p>}
           {!loading && series.length === 0 && (
-            <p className="empty-state">No series yet. Add your first one.</p>
+            <div className="empty-state">
+              <Tv size={34} aria-hidden="true" />
+              <h3>Your watchlist is ready</h3>
+              <p>Add the first series to start tracking what is planned, in progress, and finished.</p>
+            </div>
           )}
 
           <div className="series-grid">
             {series.map((item) => (
               <article className="series-card" key={item.id}>
                 <div className="card-heading">
-                  <Tv size={20} aria-hidden="true" />
+                  <span className="card-icon">
+                    <Tv size={20} aria-hidden="true" />
+                  </span>
                   <div>
                     <h3>{item.title}</h3>
                     <p>{item.genre}</p>
                   </div>
                 </div>
                 <div className="meta-row">
-                  <span className={`status-pill ${item.status}`}>{item.status}</span>
-                  <span>{item.rating === null ? 'Unrated' : `${item.rating}/10`}</span>
+                  <span className={`status-pill ${item.status}`}>{statusLabels[item.status] || item.status}</span>
+                  <RatingStars rating={item.rating} />
                 </div>
                 {item.notes && <p className="notes">{item.notes}</p>}
                 <button className="delete-button" type="button" onClick={() => deleteSeries(item.id)}>

@@ -2,4 +2,4 @@
 
 Full-stack application for tracking TV series.
 
-Technologies: React, Vite, Node.js, Express, MongoDB, Docker, Docker Compose.
+Technologies: React, Vite, Node.js, Express, MongoDB, Docker, Docker Compose, GitHub Actions and Kubernetes.
